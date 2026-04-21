@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Operacional</title>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║           CONTROLE OPERACIONAL — GitHub Pages Edition            ║
+  ║                                                                  ║
+  ║  ⚠️  AVISO DE SEGURANÇA — LEIA ANTES DE PUBLICAR               ║
+  ║                                                                  ║
+  ║  Este app usa localStorage do navegador para armazenar dados.   ║
+  ║  Todos os dados ficam no dispositivo do usuário (client-side).  ║
+  ║                                                                  ║
+  ║  ESTRUTURA RECOMENDADA DO REPOSITÓRIO:                          ║
+  ║                                                                  ║
+  ║  seu-repositorio/                                               ║
+  ║  ├── index.html              ← app de refeições                 ║
+  ║  ├── controle-operacional/                                      ║
+  ║  │   └── index.html          ← ESTE ARQUIVO                    ║
+  ║  ├── .gitignore              ← OBRIGATÓRIO (ver abaixo)         ║
+  ║  └── README.md                                                  ║
+  ║                                                                  ║
+  ║  ARQUIVO .gitignore OBRIGATÓRIO:                                ║
+  ║  ──────────────────────────────                                  ║
+  ║  # Nunca versionar dados exportados ou backups locais           ║
+  ║  *.json                                                         ║
+  ║  backup/                                                        ║
+  ║  exports/                                                       ║
+  ║  .env                                                           ║
+  ║  .env.*                                                         ║
+  ║  secrets/                                                       ║
+  ║                                                                  ║
+  ║  PERMISSÕES DO REPOSITÓRIO:                                      ║
+  ║  ──────────────────────────                                      ║
+  ║  • Mantenha o repositório como PRIVADO se os dados forem        ║
+  ║    internos da empresa. Repositórios PUBLIC no GitHub Pages     ║
+  ║    expõem o código-fonte a qualquer pessoa.                     ║
+  ║  • O localStorage NÃO é sincronizado entre dispositivos nem     ║
+  ║    fica no repositório — apenas no navegador de cada usuário.   ║
+  ║  • Nunca coloque senhas, tokens de API ou dados pessoais        ║
+  ║    diretamente no código HTML.                                  ║
+  ║  • Use GitHub Branch Protection nas configurações do repo       ║
+  ║    para evitar commits diretos na branch principal (main).      ║
+  ║                                                                  ║
+  ║  LIMITAÇÕES IMPORTANTES:                                        ║
+  ║  ─────────────────────────                                       ║
+  ║  • Dados salvos em localStorage são POR NAVEGADOR/DISPOSITIVO.  ║
+  ║    Usuário A e Usuário B em computadores diferentes NÃO        ║
+  ║    compartilham os mesmos dados.                                ║
+  ║  • O sistema de login/senha deste app é APENAS visual          ║
+  ║    (client-side). Não oferece segurança real contra acesso      ║
+  ║    indevido se alguém tiver acesso físico ao dispositivo.       ║
+  ║  • Para dados sensíveis compartilhados entre equipes,           ║
+  ║    considere soluções com backend (Firebase, Supabase, etc.)   ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f0f0;
+  --surface: #ffffff;
+  --surface2: #e8e8e8;
+  --border: #d0cfc8;
+  --gold: #a07828;
+  --gold-light: #c49a3a;
+  --gold-dim: #b89050;
+  --cream: #2a2520;
+  --red: #c04a3a;
+  --green: #3a7a4a;
+  --blue: #3a6f98;
+  --blue-light: #2a5f88;
+  --orange: #c06030;
+  --text: #1a1816;
+  --text-dim: #7a7567;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; padding: 16px 32px;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: var(--gold); white-space: nowrap; }
+.logo span { color: var(--cream); }
+
+nav { display: flex; gap: 4px; flex-wrap: wrap; background: var(--surface2); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+nav button { padding: 7px 13px; border: none; background: transparent; color: var(--text-dim); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; border-radius: 7px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+nav button:hover { color: var(--text); background: rgba(0,0,0,0.07); }
+nav button.active { background: var(--gold); color: #ffffff; font-weight: 600; }
+
+/* ── MAIN ── */
+main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.page { display: none; }
+.page.active { display: block; }
+.page-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--cream); margin-bottom: 4px; }
+.page-sub { font-size: 14px; color: var(--text-dim); margin-bottom: 26px; }
+
+/* ── CARDS ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); transition: box-shadow 0.2s; }
+.card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+.card-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; display: block; width: 3px; height: 16px; background: var(--gold); border-radius: 2px; }
+
+/* ── GRIDS ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+@media(max-width: 800px) { .grid2 { grid-template-columns: 1fr; } .grid3 { grid-template-columns: 1fr; } }
+@media(max-width: 1000px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+
+/* ── FORMS ── */
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 13px; }
+.field label { font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.5px; text-transform: uppercase; }
+input[type=text], input[type=number], input[type=date], input[type=month], input[type=password], select, textarea {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 13px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; width: 100%;
+  -webkit-appearance: none; appearance: none;
+}
+textarea { min-height: 70px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(160,120,40,0.12); }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7567' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+select option { background: var(--surface2); }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.18s ease; }
+.btn-gold { background: var(--gold); color: #ffffff; }
+.btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(160,120,40,0.3); }
+.btn-blue { background: var(--blue); color: #fff; }
+.btn-blue:hover { background: #5a8fb8; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #4a9a5a; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+.btn-ghost:hover { border-color: var(--gold-dim); color: var(--gold); }
+.btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 4px 10px; font-size: 12px; }
+.btn-danger:hover { background: var(--red); color: #fff; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 9px 12px; color: var(--text-dim); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 2px solid var(--border); background: var(--surface2); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:hover td { background: rgba(0,0,0,0.02); }
+tr:last-child td { border-bottom: none; }
+
+/* ── BADGES ── */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-gold { background: rgba(160,120,40,0.12); color: var(--gold); }
+.badge-green { background: rgba(58,122,74,0.12); color: var(--green); }
+.badge-red { background: rgba(192,74,58,0.12); color: var(--red); }
+.badge-blue { background: rgba(58,111,152,0.12); color: var(--blue); }
+.badge-orange { background: rgba(192,96,48,0.12); color: var(--orange); }
+
+/* ── STATES ── */
+.empty { text-align: center; padding: 40px; color: var(--text-dim); font-size: 14px; }
+.empty .ico { font-size: 32px; display: block; margin-bottom: 8px; }
+
+/* ── STATS ── */
+.stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+.stat-box { flex: 1; min-width: 130px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.stat-box .val { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--gold); font-weight: 700; }
+.stat-box .lbl { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+.stat-box.red .val { color: var(--red); }
+.stat-box.green .val { color: var(--green); }
+.stat-box.blue .val { color: var(--blue); }
+
+/* ── ALERTS ── */
+.alert-box { border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 12px; }
+.alert-box.red { background: rgba(192,74,58,0.08); border: 1px solid rgba(192,74,58,0.25); }
+.alert-box.gold { background: rgba(160,120,40,0.08); border: 1px solid rgba(160,120,40,0.25); }
+.alert-box.green { background: rgba(58,122,74,0.08); border: 1px solid rgba(58,122,74,0.25); }
+.alert-box.blue { background: rgba(58,111,152,0.08); border: 1px solid rgba(58,111,152,0.25); }
+.alert-box .ico { font-size: 18px; }
+.alert-box .txt { font-size: 13px; color: var(--text); }
+.alert-box .txt strong { display: block; margin-bottom: 2px; font-size: 13px; }
+
+/* ── PERMISSIONS ── */
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.perm-item { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 7px; cursor: pointer; font-size: 13px; }
+.perm-item:hover { border-color: var(--gold-dim); }
+.perm-item input { cursor: pointer; accent-color: var(--gold); }
+.perm-badge { background: rgba(160,120,40,0.1); color: var(--gold); border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 600; }
+
+/* ── LOGIN ── */
+#login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; }
+#login-screen.open { display: flex; }
+.login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 44px 40px; max-width: 380px; width: 90%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.12); }
+.login-logo { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--gold); margin-bottom: 4px; }
+.login-logo span { color: var(--cream); }
+.login-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 28px; }
+.login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; text-align: left; }
+.login-field label { font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.5px; text-transform: uppercase; }
+.login-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; width: 100%; }
+.login-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(160,120,40,0.12); }
+.login-error { color: var(--red); font-size: 12px; min-height: 18px; margin-bottom: 10px; }
+.login-btn { width: 100%; padding: 11px; border: none; border-radius: 8px; background: var(--gold); color: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.18s; }
+.login-btn:hover { background: var(--gold-light); }
+.login-user-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dim); }
+.login-user-info strong { color: var(--cream); }
+.btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 5px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+/* ── USUARIOS ── */
+#page-usuarios .user-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: var(--surface2); }
+#page-usuarios .user-item .uname { font-weight: 600; color: var(--cream); }
+#page-usuarios .user-item .urole { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: #fff; padding: 11px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+#toast.show { opacity: 1; }
+
+/* ── MODAL ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 480px; width: 94%; max-height: 90vh; overflow-y: auto; }
+.modal-box h3 { font-family: 'Playfair Display', serif; color: var(--gold); margin-bottom: 6px; font-size: 18px; }
+.modal-box p { font-size: 13px; color: var(--text-dim); margin-bottom: 18px; }
+.modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+/* ── LEITURA ── */
+.leitura-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: flex-end; }
+@media(max-width: 700px) { .leitura-row { grid-template-columns: 1fr; } }
+
+.consumo-val { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); font-weight: 700; }
+.consumo-lbl { font-size: 11px; color: var(--text-dim); }
+.section-sep { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── VENCIMENTO ── */
+.venc-ok { color: var(--green); font-weight: 600; }
+.venc-warn { color: var(--orange); font-weight: 600; }
+.venc-late { color: var(--red); font-weight: 600; }
+
+/* ── EXPORT BANNER ── */
+.export-banner { background: rgba(58,111,152,0.08); border: 1px solid rgba(58,111,152,0.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.export-banner strong { color: var(--blue); display: block; }
+
+/* ── SECURITY BANNER ── */
+.security-banner { background: rgba(192,96,48,0.07); border: 1px solid rgba(192,96,48,0.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 12px; color: var(--text-dim); }
+.security-banner strong { color: var(--orange); display: block; margin-bottom: 6px; font-size: 13px; }
+.security-banner ul { margin-left: 16px; }
+.security-banner li { margin-bottom: 3px; }
+
+@media print {
+  header, #login-screen, #toast, .export-banner, .security-banner { display: none !important; }
+  body { background: #fff; }
+  main { padding: 10px; }
+}
+
+@media (max-width: 600px) {
+  header { padding: 12px 16px; }
+  main { padding: 20px 12px; }
+  .login-box { padding: 32px 24px; }
+}
+
+/* ── GITHUB SYNC ── */
+.gh-status-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#gh-status { font-size: 12px; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+.btn-ghost-blue { background: transparent; border: 1px solid var(--blue); color: var(--blue-light); }
+.btn-ghost-blue:hover { background: var(--blue); color: #fff; }
+.ghcfg-box { background: var(--surface); border: 1px solid var(--gold-dim); border-radius: var(--radius); padding: 32px; max-width: 460px; width: 95%; }
+.ghcfg-box h3 { font-family: 'Playfair Display', serif; color: var(--gold); margin-bottom: 6px; font-size: 20px; }
+.btn-home { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.18s; }
+.btn-home:hover { border-color: var(--gold-dim); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="open">
+  <div class="login-box">
+    <div class="login-logo">⚙️ Controle<span> Operacional</span></div>
+    <div class="login-sub">Manutenção preventiva e controle operacional</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input class="login-input" type="text" id="login-user" autocomplete="off"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input class="login-input" type="password" id="login-pass"
+        onkeydown="if(event.key==='Enter')fazerLogin()">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" onclick="fazerLogin()">🔑 Entrar</button>
+    <p style="margin-top:18px;font-size:11px;color:var(--text-dim);">Padrão: usuário <strong>admin</strong> / senha <strong>1234</strong></p>
+    <!--
+      ⚠️ SEGURANÇA: Altere a senha padrão imediatamente após o primeiro acesso.
+      Este login é client-side (apenas no navegador). Não substitui autenticação real em servidor.
+    -->
+  </div>
+</div>
+
+<header>
+  <div class="logo">⚙️ Controle<span> Operacional</span></div>
+  <nav id="main-nav">
+    <button class="active" onclick="goPage('dashboard')">📊 Painel</button>
+    <button onclick="goPage('filtro-agua')" data-page="filtro-agua">💧 Filtro de Água</button>
+    <button onclick="goPage('extintor')" data-page="extintor">🧯 Extintores</button>
+    <button onclick="goPage('coifa')" data-page="coifa">🌬️ Coifa</button>
+    <button onclick="goPage('medidores')" data-page="medidores">📟 Medidores</button>
+    <button onclick="goPage('oleo')" data-page="oleo">🛢️ Óleo</button>
+    <button onclick="goPage('generico')" data-page="generico" data-mod="generico">📋 Outros Controles</button>
+    <button onclick="goPage('usuarios')" data-page="usuarios" data-mod="usuarios">🔐 Usuários</button>
+  </nav>
+  <div class="gh-status-bar">
+    <div id="header-user-info" class="login-user-info" style="display:none;">
+      <span>👤 <strong id="header-username"></strong></span>
+      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    </div>
+    <span id="gh-status" style="color:#a07828;">⏳ Carregando...</span>
+    <button class="btn btn-ghost-blue" onclick="abrirGHConfig()" title="Configurar GitHub" style="padding:6px 12px;font-size:12px;">⚙️ GitHub</button>
+    <button class="btn btn-ghost-blue" onclick="sincronizar()" title="Sincronizar dados" style="padding:6px 12px;font-size:12px;">🔄 Sync</button>
+  </div>
+</header>
+
+<main>
+
+<!-- PAINEL -->
+<div id="page-dashboard" class="page active">
+  <h1 class="page-title">Painel de Controle</h1>
+  <p class="page-sub">Visão geral dos controles operacionais e alertas de vencimento.</p>
+
+  <!-- Banner de segurança e dados — visível apenas no painel -->
+  <div class="security-banner" id="security-info-banner">
+    <strong>🔒 Informações sobre Armazenamento de Dados (GitHub Pages)</strong>
+    <ul>
+      <li><strong>Armazenamento local:</strong> Todos os dados são salvos no <code>localStorage</code> deste navegador, neste dispositivo. Dados <strong>não são enviados</strong> para nenhum servidor.</li>
+      <li><strong>Sem sincronização:</strong> Cada dispositivo tem sua própria cópia dos dados. Para compartilhar, use a função Exportar/Importar JSON.</li>
+      <li><strong>Segurança do repositório:</strong> Mantenha o repositório GitHub como <strong>Privado</strong> se os dados forem internos da empresa.</li>
+      <li><strong>Backup recomendado:</strong> Exporte regularmente os dados em JSON e armazene em local seguro (nunca versionado no repositório público).</li>
+    </ul>
+    <button onclick="document.getElementById('security-info-banner').style.display='none'" style="margin-top:8px;font-size:11px;background:transparent;border:1px solid var(--orange);color:var(--orange);padding:3px 10px;border-radius:6px;cursor:pointer;">Fechar aviso</button>
+  </div>
+
+  <div class="stats-row" id="dash-stats"></div>
+  <div id="dash-alertas"></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">📅 Próximas Manutenções</div>
+      <div id="dash-proximas"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🕒 Últimas Atividades</div>
+      <div id="dash-atividades"></div>
+    </div>
+  </div>
+
+  <!-- Exportar / Importar dados -->
+  <div class="card" style="margin-top:10px;">
+    <div class="card-title">💾 Exportar / Importar Dados</div>
+    <div class="export-banner">
+      <span style="font-size:20px;">ℹ️</span>
+      <div>
+        <strong>Como fazer backup dos dados</strong>
+        Os dados ficam somente neste navegador. Exporte regularmente para um arquivo JSON e guarde em local seguro.
+        <strong style="color:var(--red);display:inline;">Nunca comite arquivos de backup (.json) no repositório GitHub!</strong>
+        Adicione <code>*.json</code> ao seu <code>.gitignore</code>.
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-blue" onclick="exportarDados()">⬇️ Exportar JSON</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">⬆️ Importar JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDados(event)">
+    </div>
+  </div>
+</div>
+
+<!-- FILTRO DE ÁGUA -->
+<div id="page-filtro-agua" class="page">
+  <h1 class="page-title">💧 Filtro de Água</h1>
+  <p class="page-sub">Controle de troca dos filtros de água — periodicidade de 6 meses.</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Registrar Troca de Filtro</div>
+      <div class="field"><label>Equipamento / Local</label><input type="text" id="fa-equip" placeholder="Ex.: Filtro Cozinha, Purificador Bar"></div>
+      <div class="field"><label>Data da Troca</label><input type="date" id="fa-data"></div>
+      <div class="field"><label>Tipo do Filtro</label>
+        <select id="fa-tipo">
+          <option value="">— Selecione —</option>
+          <option>Cartucho de Sedimentos</option>
+          <option>Carvão Ativado</option>
+          <option>Osmose Reversa</option>
+          <option>UV (Ultravioleta)</option>
+          <option>Resina de Troca Iônica</option>
+          <option>Polipropileno</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div class="field"><label>Empresa / Responsável</label><input type="text" id="fa-empresa" placeholder="Ex.: Aquapura, Responsável interno"></div>
+      <div class="field"><label>Valor pago (R$)</label><input type="number" id="fa-valor" placeholder="0,00" step="0.01" min="0" value="0"></div>
+      <div class="field"><label>Observações</label><textarea id="fa-obs" placeholder="Observações adicionais..."></textarea></div>
+      <button class="btn btn-gold" onclick="addFiltroAgua()">+ Registrar Troca</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de Trocas</div>
+      <div id="lista-filtro-agua"><div class="empty"><span class="ico">💧</span>Nenhuma troca registrada</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXTINTORES -->
+<div id="page-extintor" class="page">
+  <h1 class="page-title">🧯 Extintores</h1>
+  <p class="page-sub">Controle de recarga e manutenção dos extintores — periodicidade anual.</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Registrar Recarga / Manutenção</div>
+      <div class="field"><label>Identificação / Local</label><input type="text" id="ext-equip" placeholder="Ex.: Extintor Cozinha 1, Hall Entrada"></div>
+      <div class="field"><label>Tipo de Extintor</label>
+        <select id="ext-tipo">
+          <option value="">— Selecione —</option>
+          <option>CO₂ (Dióxido de Carbono)</option>
+          <option>Água Pressurizada</option>
+          <option>Pó Químico Seco (ABC)</option>
+          <option>Pó Químico Seco (BC)</option>
+          <option>Espuma Mecânica</option>
+          <option>Halon / Clean Agent</option>
+        </select>
+      </div>
+      <div class="field"><label>Data da Recarga</label><input type="date" id="ext-data"></div>
+      <div class="field"><label>Próxima Recarga Prevista</label><input type="date" id="ext-prox" placeholder="Calculado automaticamente se vazio"></div>
+      <div class="field"><label>Empresa Responsável</label><input type="text" id="ext-empresa" placeholder="Ex.: ProteFogo Serviços"></div>
+      <div class="field"><label>Número do Lacre / Certificado</label><input type="text" id="ext-lacre" placeholder="Ex.: 2024-00123"></div>
+      <div class="field"><label>Valor pago (R$)</label><input type="number" id="ext-valor" placeholder="0,00" step="0.01" min="0" value="0"></div>
+      <div class="field"><label>Observações</label><textarea id="ext-obs" placeholder="Observações adicionais..."></textarea></div>
+      <button class="btn btn-gold" onclick="addExtintor()">+ Registrar</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de Extintores</div>
+      <div id="lista-extintor"><div class="empty"><span class="ico">🧯</span>Nenhum registro</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- COIFA -->
+<div id="page-coifa" class="page">
+  <h1 class="page-title">🌬️ Coifa</h1>
+  <p class="page-sub">Controle de limpeza da coifa e filtros de ventilação.</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Registrar Limpeza</div>
+      <div class="field"><label>Equipamento / Local</label><input type="text" id="cf-equip" placeholder="Ex.: Coifa Cozinha Principal"></div>
+      <div class="field"><label>Tipo</label>
+        <select id="cf-tipo">
+          <option value="coifa">Coifa</option>
+          <option value="filtro">Filtro</option>
+          <option value="duto">Duto</option>
+        </select>
+      </div>
+      <div class="field"><label>Periodicidade (dias)</label>
+        <select id="cf-periodo">
+          <option value="30">Mensal (30 dias)</option>
+          <option value="60">Bimestral (60 dias)</option>
+          <option value="90">Trimestral (90 dias)</option>
+          <option value="180">Semestral (180 dias)</option>
+        </select>
+      </div>
+      <div class="field"><label>Data da Limpeza</label><input type="date" id="cf-data"></div>
+      <div class="field"><label>Empresa / Responsável</label><input type="text" id="cf-empresa" placeholder="Ex.: ClimaTech Limpeza"></div>
+      <div class="field"><label>Valor pago (R$)</label><input type="number" id="cf-valor" placeholder="0,00" step="0.01" min="0" value="0"></div>
+      <div class="field"><label>Observações</label><textarea id="cf-obs" placeholder="Observações adicionais..."></textarea></div>
+      <button class="btn btn-gold" onclick="addCoifa()">+ Registrar Limpeza</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de Limpezas</div>
+      <div id="lista-coifa"><div class="empty"><span class="ico">🌬️</span>Nenhum registro</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MEDIDORES -->
+<div id="page-medidores" class="page">
+  <h1 class="page-title">📟 Medidores</h1>
+  <p class="page-sub">Registro de leituras de água, gás e eletricidade.</p>
+  <div id="med-resumos" class="grid3" style="margin-bottom:18px;"></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Nova Leitura</div>
+      <div class="field"><label>Tipo de Medidor</label>
+        <select id="med-tipo">
+          <option value="">— Selecione —</option>
+          <option value="agua">💧 Água</option>
+          <option value="gas">🔥 Gás</option>
+          <option value="eletricidade">⚡ Eletricidade</option>
+        </select>
+      </div>
+      <div class="field"><label>Identificação do Medidor</label><input type="text" id="med-equip" placeholder="Ex.: Medidor Principal, Bloco A"></div>
+      <div class="field"><label>Data da Leitura</label><input type="date" id="med-data"></div>
+      <div class="leitura-row">
+        <div class="field"><label>Leitura Atual</label><input type="number" id="med-leitura" placeholder="0" step="0.01"></div>
+        <div class="field"><label>Unidade</label>
+          <select id="med-unidade">
+            <option value="m³">m³</option>
+            <option value="kWh">kWh</option>
+            <option value="L">L</option>
+          </select>
+        </div>
+        <div></div>
+      </div>
+      <div class="field"><label>Observações</label><textarea id="med-obs" placeholder="Observações..." style="min-height:50px;"></textarea></div>
+      <button class="btn btn-gold" onclick="addMedidor()">+ Registrar Leitura</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Filtrar Histórico</div>
+      <div class="field"><label>Filtrar por Tipo</label>
+        <select id="med-filtro-tipo" onchange="renderMedidores()">
+          <option value="">Todos</option>
+          <option value="agua">💧 Água</option>
+          <option value="gas">🔥 Gás</option>
+          <option value="eletricidade">⚡ Eletricidade</option>
+        </select>
+      </div>
+      <div class="field"><label>Filtrar por Mês</label>
+        <input type="month" id="med-filtro-mes" onchange="renderMedidores()">
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Histórico de Leituras</div>
+    <div id="lista-medidores"><div class="empty"><span class="ico">📟</span>Nenhuma leitura registrada</div></div>
+  </div>
+</div>
+
+<!-- ÓLEO -->
+<div id="page-oleo" class="page">
+  <h1 class="page-title">🛢️ Óleo de Fritura</h1>
+  <p class="page-sub">Controle de coleta de óleo usado — descarte adequado e compensações recebidas.</p>
+  <div id="oleo-resumo" style="margin-bottom:18px;"></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Registrar Coleta</div>
+      <div class="field"><label>Data da Coleta</label><input type="date" id="ol-data"></div>
+      <div class="field"><label>Empresa Coletora</label><input type="text" id="ol-empresa" placeholder="Ex.: EcoÓleo Coletas"></div>
+      <div class="field"><label>Volume do Galão</label>
+        <select id="ol-galao" onchange="onGalaoChange()">
+          <option value="20">20L</option>
+          <option value="50">50L</option>
+          <option value="100">100L</option>
+          <option value="200">200L</option>
+          <option value="outro">Outro volume</option>
+        </select>
+      </div>
+      <div class="field" id="ol-galao-custom-field" style="display:none;"><label>Volume personalizado (L)</label><input type="number" id="ol-galao-custom" placeholder="Ex.: 30" min="1"></div>
+      <div class="field"><label>Quantidade de Galões</label><input type="number" id="ol-qtd" value="1" min="1"></div>
+      <div class="field"><label>Modalidade</label>
+        <select id="ol-modalidade" onchange="onOlModalChange()">
+          <option value="gratuito">✅ Coleta gratuita</option>
+          <option value="pagamento">💰 Recebe pagamento por litro</option>
+          <option value="produto">🧴 Recebe produto em troca</option>
+        </select>
+      </div>
+      <div id="ol-pagamento-fields" style="display:none;">
+        <div class="field"><label>Valor por litro (R$)</label><input type="number" id="ol-vlitro" placeholder="0,00" step="0.01" min="0"></div>
+      </div>
+      <div id="ol-produto-fields" style="display:none;">
+        <div class="field"><label>Produto recebido</label><input type="text" id="ol-produto" placeholder="Ex.: Sabão líquido, detergente..."></div>
+        <div class="field"><label>Valor estimado do produto (R$)</label><input type="number" id="ol-vproduto" placeholder="0,00" step="0.01" min="0" value="0"></div>
+      </div>
+      <div class="field"><label>Observações</label><textarea id="ol-obs" placeholder="Observações adicionais..."></textarea></div>
+      <button class="btn btn-gold" onclick="addOleo()">+ Registrar Coleta</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de Coletas</div>
+      <div id="lista-oleo"><div class="empty"><span class="ico">🛢️</span>Nenhuma coleta registrada</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTROS CONTROLES -->
+<div id="page-generico" class="page">
+  <h1 class="page-title">📋 Outros Controles</h1>
+  <p class="page-sub">Cadastre controles personalizados para qualquer tipo de manutenção periódica.</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Novo Tipo de Controle</div>
+      <div class="field"><label>Nome do Controle</label><input type="text" id="gc-nome" placeholder="Ex.: Dedetização, Limpeza Caixa d'Água"></div>
+      <div class="field"><label>Equipamento / Local</label><input type="text" id="gc-equip" placeholder="Ex.: Prédio todo, Cozinha"></div>
+      <div class="field"><label>Tipo de Medição</label>
+        <select id="gc-medicao">
+          <option value="">— Selecione —</option>
+          <option value="Inspeção">Inspeção</option>
+          <option value="Limpeza">Limpeza</option>
+          <option value="Substituição">Substituição</option>
+          <option value="Calibração">Calibração</option>
+          <option value="Medição">Medição</option>
+          <option value="Teste">Teste</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="field"><label>Periodicidade</label>
+        <select id="gc-periodo">
+          <option value="1">Diária</option>
+          <option value="7">Semanal</option>
+          <option value="15">Quinzenal</option>
+          <option value="30" selected>Mensal</option>
+          <option value="60">Bimestral</option>
+          <option value="90">Trimestral</option>
+          <option value="180">Semestral</option>
+          <option value="365">Anual</option>
+        </select>
+      </div>
+      <div class="field"><label>Descrição / Procedimento</label><textarea id="gc-desc" placeholder="Descreva o procedimento..."></textarea></div>
+      <button class="btn btn-gold" onclick="addControleGenerico()">+ Cadastrar Controle</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Controles Cadastrados</div>
+      <div id="lista-gc-tipos"><div class="empty"><span class="ico">📋</span>Nenhum controle cadastrado</div></div>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <div class="card">
+    <div class="card-title">Registrar Execução</div>
+    <div class="grid3">
+      <div class="field"><label>Controle</label>
+        <select id="gc-exec-tipo"><option value="">— Selecione o controle —</option></select>
+      </div>
+      <div class="field"><label>Data de Execução</label><input type="date" id="gc-exec-data"></div>
+      <div class="field"><label>Responsável</label><input type="text" id="gc-exec-resp" placeholder="Nome ou empresa"></div>
+    </div>
+    <div class="field"><label>Resultado / Observações</label><textarea id="gc-exec-obs" placeholder="Resultado da inspeção, observações..."></textarea></div>
+    <button class="btn btn-gold" onclick="addExecucao()">+ Registrar Execução</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Histórico de Execuções</div>
+    <div id="lista-gc-exec"><div class="empty"><span class="ico">📝</span>Nenhuma execução registrada</div></div>
+  </div>
+</div>
+
+<!-- USUÁRIOS -->
+<div id="page-usuarios" class="page">
+  <h1 class="page-title">🔐 Gerenciar Usuários</h1>
+  <p class="page-sub">Cadastre usuários e defina as permissões de acesso por módulo.</p>
+
+  <!-- Aviso de segurança na aba de usuários -->
+  <div class="security-banner">
+    <strong>⚠️ Aviso de Segurança — Gestão de Usuários no GitHub Pages</strong>
+    <ul>
+      <li>O sistema de login é <strong>client-side</strong>: as senhas ficam armazenadas com hash simples no <code>localStorage</code> do navegador.</li>
+      <li><strong>Não use senhas corporativas reais</strong> aqui. Crie senhas exclusivas para este sistema.</li>
+      <li>Qualquer pessoa com acesso ao dispositivo pode inspecionar o <code>localStorage</code> via console do navegador.</li>
+      <li>Para ambientes com dados sensíveis, considere migrar para uma solução com backend autenticado (ex.: Firebase Auth + Firestore).</li>
+      <li>Altere a senha padrão <code>admin/1234</code> imediatamente após o primeiro uso.</li>
+    </ul>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Novo Usuário</div>
+      <div class="field"><label>Nome de Usuário</label><input type="text" id="usr-nome" placeholder="Ex.: joao.silva" autocomplete="off"></div>
+      <div class="field"><label>Senha</label><input type="password" id="usr-senha" placeholder="Mínimo 4 caracteres" autocomplete="new-password"></div>
+      <div class="field"><label>Confirmar Senha</label><input type="password" id="usr-senha2" placeholder="Repita a senha" autocomplete="new-password"></div>
+      <div class="field">
+        <label>Permissões de Acesso</label>
+        <div class="perm-grid" id="perm-novo-grid">
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="filtro-agua" checked> 💧 Filtro de Água</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="extintor" checked> 🧯 Extintores</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="coifa" checked> 🌬️ Coifa</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="medidores" checked> 📟 Medidores</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="oleo" checked> 🛢️ Óleo</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="generico"> 📋 Outros Controles</label>
+          <label class="perm-item"><input type="checkbox" name="perm-novo" value="usuarios"> 🔐 Usuários</label>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="addUsuario()">+ Adicionar Usuário</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Usuários Cadastrados</div>
+      <div id="lista-usuarios"><div class="empty"><span class="ico">🔐</span>Nenhum usuário</div></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div id="toast"></div>
+
+<!-- GITHUB CONFIG MODAL -->
+<div id="modal-ghcfg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:center;justify-content:center;">
+  <div class="ghcfg-box">
+    <h3>⚙️ Configuração GitHub</h3>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:20px;">Os dados serão salvos no seu repositório GitHub e ficam acessíveis em qualquer dispositivo.</p>
+    <div class="field"><label>Usuário GitHub</label><input type="text" id="gh-user" placeholder="seu-usuario"></div>
+    <div class="field"><label>Repositório</label><input type="text" id="gh-repo" placeholder="controle-restaurante-db"></div>
+    <div class="field"><label>Branch</label><input type="text" id="gh-branch" placeholder="main"></div>
+    <div class="field"><label>Token (ghp_...)</label><input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx"></div>
+    <div style="margin-bottom:16px;">
+      <span id="gh-test-status" style="font-size:12px;"></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="salvarGHConfig()">✓ Salvar e Conectar</button>
+      <button class="btn btn-ghost" onclick="fecharGHConfig()">Cancelar</button>
+      <button class="btn btn-ghost-blue" onclick="limparGHConfig()" style="margin-left:auto;">🗑️ Desconectar</button>
+    </div>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:14px;">O token é salvo apenas localmente neste navegador. O arquivo de dados é salvo em <code style="color:var(--gold)">db/operacional.json</code> no repositório.</p>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/*
+ * ================================================================
+ *  CONTROLE OPERACIONAL — GitHub Pages Edition
+ *  Compatível com: GitHub Pages, Netlify, Vercel (arquivos estáticos)
+ *
+ *  ARMAZENAMENTO: localStorage (client-side, somente neste navegador)
+ *  Chave de storage: 'ctrl_op_db_v2'
+ *
+ *  SEGURANÇA — NOTAS PARA O DESENVOLVEDOR:
+ *  ─────────────────────────────────────────
+ *  1. Este app NÃO tem backend. Todos os dados ficam no navegador.
+ *
+ *  2. NUNCA coloque credenciais, tokens de API, ou chaves secretas
+ *     diretamente neste arquivo HTML. O código-fonte é público em
+ *     repositórios públicos do GitHub.
+ *
+ *  3. Se precisar de dados compartilhados entre dispositivos, use:
+ *     - Firebase Firestore (gratuito para uso básico)
+ *     - Supabase (open-source, free tier generoso)
+ *     - PocketBase (self-hosted)
+ *
+ *  4. ESTRUTURA DE ARQUIVOS RECOMENDADA NO REPOSITÓRIO:
+ *
+ *     meu-repo/
+ *     ├── index.html                  ← Controle de Refeições
+ *     ├── controle-operacional/
+ *     │   └── index.html              ← ESTE ARQUIVO
+ *     ├── .gitignore                  ← OBRIGATÓRIO
+ *     └── README.md
+ *
+ *  5. ARQUIVO .gitignore OBRIGATÓRIO:
+ *
+ *     # Dados exportados — nunca versionados
+ *     *.json
+ *     backup/
+ *     exports/
+ *     dados/
+ *     # Variáveis de ambiente
+ *     .env
+ *     .env.*
+ *     .env.local
+ *     # Dependências (se usar npm futuramente)
+ *     node_modules/
+ *     # Arquivos de sistema
+ *     .DS_Store
+ *     Thumbs.db
+ *
+ *  6. PERMISSÕES DO REPOSITÓRIO GITHUB:
+ *     - Settings → Collaborators: adicione apenas pessoas da equipe
+ *     - Settings → Branches → Branch protection rules:
+ *       * Marque "Require a pull request before merging"
+ *       * Marque "Require review from code owners"
+ *     - Settings → Pages: habilite apenas na branch main, pasta /root
+ *     - Para dados internos: mantenha o repositório como PRIVADO
+ *       (GitHub Pages funciona em repos privados no plano pago)
+ *
+ * ================================================================
+ */
+
+var DB_KEY    = 'ctrl_op_db_v2';
+var GH_CFG_KEY = 'ctrl_op_gh_cfg';
+var GH_FILE    = 'db/operacional.json';
+
+var _db = {
+  usuarios: [],
+  filtroAgua: [],
+  extintor: [],
+  coifa: [],
+  medidores: [],
+  oleo: [],
+  gcTipos: [],
+  gcExec: []
+};
+
+/* Cache SHA do arquivo no GitHub (evita conflito de edição) */
+var _currentSha = null;
+
+/* Verifica disponibilidade do localStorage */
+var _storageAvail = (function() {
+  try {
+    var t = '__test__';
+    localStorage.setItem(t, t);
+    localStorage.removeItem(t);
+    return true;
+  } catch(e) { return false; }
+})();
+
+/* =========================================================
+   GITHUB API
+   ========================================================= */
+var GH = {
+  getCfg: function() {
+    try { return JSON.parse(localStorage.getItem(GH_CFG_KEY) || 'null') || {}; }
+    catch(e) { return {}; }
+  },
+  saveCfg: function(obj) {
+    localStorage.setItem(GH_CFG_KEY, JSON.stringify(obj));
+  },
+  isConfigured: function() {
+    var c = GH.getCfg();
+    return !!(c.user && c.repo && c.branch && c.token);
+  },
+  _url: function() {
+    var c = GH.getCfg();
+    return 'https://api.github.com/repos/' + c.user + '/' + c.repo + '/contents/' + GH_FILE + '?ref=' + c.branch;
+  },
+  _headers: function() {
+    var c = GH.getCfg();
+    return {
+      'Authorization': 'token ' + c.token,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    };
+  },
+  read: async function() {
+    try {
+      var resp = await fetch(GH._url(), { headers: GH._headers() });
+      if (resp.status === 404) return { content: null, sha: null };
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var data = await resp.json();
+      var rawB64 = (data.content || '').replace(/\n/g,'').trim();
+      if (!rawB64) return { content: null, sha: data.sha };
+      var json = '';
+      try { json = decodeURIComponent(escape(atob(rawB64))); }
+      catch(e) { json = atob(rawB64); }
+      json = json.trim();
+      if (!json) return { content: null, sha: data.sha };
+      var parsed = null;
+      try { parsed = JSON.parse(json); }
+      catch(e) { return { content: null, sha: data.sha }; }
+      return { content: parsed, sha: data.sha };
+    } catch(e) { console.error('GH read error:', e); throw e; }
+  },
+  write: async function(dados, sha) {
+    var c = GH.getCfg();
+    var json = JSON.stringify(dados, null, 2);
+    var b64;
+    try { b64 = btoa(unescape(encodeURIComponent(json))); }
+    catch(e) { b64 = btoa(json); }
+    var body = { message: 'Atualização automática — ' + new Date().toLocaleString('pt-BR'), content: b64, branch: c.branch };
+    if (sha) body.sha = sha;
+    var resp = await fetch(
+      'https://api.github.com/repos/' + c.user + '/' + c.repo + '/contents/' + GH_FILE,
+      { method: 'PUT', headers: GH._headers(), body: JSON.stringify(body) }
+    );
+    if (!resp.ok) {
+      var err = await resp.json().catch(function(){ return {}; });
+      throw new Error((err.message || 'Erro ao salvar') + ' (HTTP ' + resp.status + ')');
+    }
+    var result = await resp.json();
+    return result.content.sha;
+  },
+  test: async function() {
+    try {
+      var c = GH.getCfg();
+      var resp = await fetch('https://api.github.com/repos/' + c.user + '/' + c.repo, { headers: GH._headers() });
+      if (resp.status === 401) return { ok: false, msg: 'Token inválido ou sem permissão.' };
+      if (resp.status === 404) return { ok: false, msg: 'Repositório não encontrado.' };
+      if (!resp.ok) return { ok: false, msg: 'Erro HTTP ' + resp.status };
+      return { ok: true, msg: 'Conectado com sucesso!' };
+    } catch(e) { return { ok: false, msg: 'Erro de rede: ' + e.message }; }
+  }
+};
+
+/* Carrega do localStorage para _db */
+function _carregarLocal() {
+  if (!_storageAvail) return;
+  try {
+    var raw = localStorage.getItem(DB_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      Object.keys(_db).forEach(function(k) {
+        if (Array.isArray(parsed[k])) _db[k] = parsed[k];
+      });
+    }
+  } catch(e) { console.warn('dbLoad error', e); }
+}
+
+/* Salva _db no localStorage */
+function _salvarLocal() {
+  if (!_storageAvail) return;
+  try { localStorage.setItem(DB_KEY, JSON.stringify(_db)); } catch(e) { console.warn('dbSave error', e); }
+}
+
+function dbLoad() { _carregarLocal(); }
+
+/* Persiste no GitHub (ou localStorage como fallback) */
+async function _persistir(callback) {
+  _salvarLocal(); /* sempre salva local como backup */
+  if (GH.isConfigured()) {
+    try {
+      _currentSha = await GH.write(_db, _currentSha);
+      if (callback) callback(null);
+    } catch(e) {
+      try {
+        var r = await GH.read();
+        _currentSha = r ? r.sha : null;
+        _currentSha = await GH.write(_db, _currentSha);
+        if (callback) callback(null);
+      } catch(e2) {
+        console.error('Erro ao salvar no GitHub:', e2);
+        toast('⚠️ Salvo localmente (GitHub indisponível).', '#a07828');
+        if (callback) callback(null);
+      }
+    }
+  } else {
+    if (callback) callback(null);
+  }
+}
+
+function dbSave() { _persistir(null); }
+function dbGet(col) { return JSON.parse(JSON.stringify(_db[col] || [])); }
+function dbSet(col, arr) { _db[col] = arr; _persistir(null); }
+function dbAdd(col, item) { _db[col].push(item); _persistir(null); }
+function dbDel(col, id) { _db[col] = _db[col].filter(function(x){ return x.id !== id; }); _persistir(null); }
+
+/* Carrega dados do GitHub (ou localStorage) para _db */
+async function _loadAll(callback) {
+  if (GH.isConfigured()) {
+    try {
+      var result = await GH.read();
+      if (result && result.content) {
+        var remoto = result.content;
+        Object.keys(_db).forEach(function(k) {
+          if (Array.isArray(remoto[k])) _db[k] = remoto[k];
+        });
+        _currentSha = result.sha;
+      } else {
+        _carregarLocal();
+        _currentSha = result ? result.sha : null;
+        try { _currentSha = await GH.write(_db, _currentSha); } catch(we) {}
+      }
+    } catch(e) {
+      _carregarLocal();
+      if (callback) callback(new Error('GitHub indisponível: ' + e.message));
+      return;
+    }
+  } else {
+    _carregarLocal();
+  }
+  if (callback) callback(null);
+}
+
+/* =========================================================
+   MODAL GITHUB CONFIG
+   ========================================================= */
+function abrirGHConfig() {
+  var c = GH.getCfg();
+  document.getElementById('gh-user').value   = c.user   || '';
+  document.getElementById('gh-repo').value   = c.repo   || '';
+  document.getElementById('gh-branch').value = c.branch || 'main';
+  document.getElementById('gh-token').value  = c.token  || '';
+  document.getElementById('gh-test-status').textContent = '';
+  document.getElementById('modal-ghcfg').style.display = 'flex';
+}
+
+function fecharGHConfig() {
+  document.getElementById('modal-ghcfg').style.display = 'none';
+}
+
+async function salvarGHConfig() {
+  var user   = document.getElementById('gh-user').value.trim();
+  var repo   = document.getElementById('gh-repo').value.trim();
+  var branch = document.getElementById('gh-branch').value.trim() || 'main';
+  var token  = document.getElementById('gh-token').value.trim();
+  if (!user || !repo || !token) {
+    document.getElementById('gh-test-status').textContent = '⚠️ Preencha todos os campos.';
+    document.getElementById('gh-test-status').style.color = '#c04a3a';
+    return;
+  }
+  GH.saveCfg({ user: user, repo: repo, branch: branch, token: token });
+  document.getElementById('gh-test-status').textContent = '⏳ Testando conexão...';
+  document.getElementById('gh-test-status').style.color = '#a07828';
+  var result = await GH.test();
+  if (!result.ok) {
+    document.getElementById('gh-test-status').textContent = '❌ ' + result.msg;
+    document.getElementById('gh-test-status').style.color = '#c04a3a';
+    return;
+  }
+  document.getElementById('gh-test-status').textContent = '✅ ' + result.msg;
+  document.getElementById('gh-test-status').style.color = '#3a7a4a';
+  setTimeout(function() { fecharGHConfig(); sincronizar(); }, 1200);
+}
+
+function limparGHConfig() {
+  if (!confirm('Desconectar do GitHub? Os dados locais não serão apagados.')) return;
+  localStorage.removeItem(GH_CFG_KEY);
+  _currentSha = null;
+  fecharGHConfig();
+  setStatus('⚠️ Sem GitHub', '#c04a3a');
+  toast('GitHub desconectado. Usando armazenamento local.', '#c04a3a');
+}
+
+/* =========================================================
+   SINCRONIZAÇÃO / STATUS
+   ========================================================= */
+function setStatus(txt, cor) {
+  var el = document.getElementById('gh-status');
+  if (el) { el.textContent = txt; el.style.color = cor || '#3a7a4a'; }
+}
+
+async function sincronizar() {
+  if (!GH.isConfigured()) {
+    setStatus('⚠️ Configure o GitHub →', '#c04a3a');
+    _carregarLocal();
+    renderAll();
+    return;
+  }
+  setStatus('⏳ Sincronizando...', '#a07828');
+  await _loadAll(function(err) {
+    if (err) {
+      setStatus('❌ ' + err.message, '#c04a3a');
+    } else {
+      var now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      setStatus('✅ Sincronizado ' + now, '#3a7a4a');
+      iniciarAutoSync();
+    }
+    renderAll();
+  });
+}
+
+/* Auto-sync silencioso a cada 30s */
+var _autoSyncInterval = null;
+function iniciarAutoSync() {
+  if (_autoSyncInterval) clearInterval(_autoSyncInterval);
+  if (!GH.isConfigured()) return;
+  _autoSyncInterval = setInterval(async function() {
+    var ativo = document.activeElement;
+    if (ativo && (ativo.tagName === 'INPUT' || ativo.tagName === 'SELECT' || ativo.tagName === 'TEXTAREA')) return;
+    try {
+      var result = await GH.read();
+      if (!result || !result.content) return;
+      var remoto = result.content;
+      Object.keys(_db).forEach(function(k) {
+        if (Array.isArray(remoto[k])) _db[k] = remoto[k];
+      });
+      _currentSha = result.sha;
+      _salvarLocal();
+      var now = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      setStatus('✅ Sincronizado ' + now, '#3a7a4a');
+      renderAll();
+    } catch(e) { console.warn('Auto-sync falhou:', e.message); }
+  }, 30000);
+}
+
+function renderAll() {
+  renderDashboard();
+  renderFiltroAgua();
+  renderExtintor();
+  renderCoifa();
+  renderMedidores();
+  renderMedResumosCards();
+  renderOleo();
+  renderOleoResumo();
+  renderGcTipos();
+  renderGcExec();
+  populateGcSelect();
+  renderUsuarios();
+}
+
+/* =========================================================
+   EXPORTAR / IMPORTAR (backup seguro fora do repositório)
+   ========================================================= */
+function exportarDados() {
+  /*
+   * Exporta todos os dados para um arquivo JSON local.
+   * IMPORTANTE: Não versione este arquivo no GitHub!
+   * Adicione *.json ao .gitignore do repositório.
+   */
+  var exportData = {
+    versao: '2',
+    exportadoEm: new Date().toISOString(),
+    aviso: 'Este arquivo contém dados operacionais. Mantenha em local seguro. NÃO versione no GitHub.',
+    dados: JSON.parse(JSON.stringify(_db))
+  };
+  var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'backup_ctrl_op_' + hoje() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Dados exportados! Guarde o arquivo com segurança.');
+}
+
+function importarDados(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      var dados = parsed.dados || parsed; /* suporta formato antigo e novo */
+      var confirmMsg = 'Isso irá substituir TODOS os dados atuais pelo backup selecionado.\n\nDeseja continuar?';
+      if (!confirm(confirmMsg)) return;
+      Object.keys(_db).forEach(function(k) {
+        if (Array.isArray(dados[k])) _db[k] = dados[k];
+      });
+      dbSave();
+      toast('✓ Dados importados com sucesso!');
+      goPage('dashboard');
+    } catch(err) {
+      toast('Erro ao importar: arquivo inválido.', '#c04a3a');
+      console.error('Import error:', err);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function hoje() { return new Date().toISOString().split('T')[0]; }
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function fmtData(iso) { if (!iso) return '—'; var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function moeda(v) { return 'R$ ' + (parseFloat(v)||0).toFixed(2).replace('.', ','); }
+
+function addDias(isoDate, dias) {
+  var d = new Date(isoDate + 'T00:00:00');
+  d.setDate(d.getDate() + parseInt(dias));
+  return d.toISOString().split('T')[0];
+}
+
+function diasAte(isoDate) {
+  var h = new Date(hoje() + 'T00:00:00').getTime();
+  var a = new Date(isoDate + 'T00:00:00').getTime();
+  return Math.round((a - h) / 86400000);
+}
+
+function vencBadge(isoDate) {
+  if (!isoDate) return '<span class="badge badge-blue">—</span>';
+  var d = diasAte(isoDate);
+  if (d < 0)   return '<span class="venc-late">⚠️ Vencido há '+Math.abs(d)+'d</span>';
+  if (d <= 30) return '<span class="venc-warn">⏳ '+fmtData(isoDate)+' ('+d+'d)</span>';
+  return '<span class="venc-ok">✓ '+fmtData(isoDate)+'</span>';
+}
+
+function ticoIco(tipo) {
+  return { agua:'💧 Água', gas:'🔥 Gás', eletricidade:'⚡ Eletricidade' }[tipo] || tipo;
+}
+
+/* =========================================================
+   AUTH — Login/Logout (client-side, armazenado em localStorage)
+   NOTA DE SEGURANÇA: Este sistema de autenticação é client-side.
+   O hash usado (_hashSenha) é um hash simples não criptográfico.
+   Não use para proteger dados verdadeiramente confidenciais.
+   Para produção com dados sensíveis, use autenticação real via backend.
+   ========================================================= */
+var _logado = null;
+
+function _hashSenha(s) {
+  /* Hash simples djb2 — NÃO é criptograficamente seguro.
+   * Adequado apenas para evitar exibição de senhas em texto puro no localStorage.
+   * Para segurança real, implemente bcrypt via backend. */
+  var h = 0;
+  for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return h.toString(16);
+}
+
+function _getUsuarios() { return dbGet('usuarios'); }
+
+async function fazerLogin() {
+  var user  = document.getElementById('login-user').value.trim();
+  var pass  = document.getElementById('login-pass').value;
+  var errEl = document.getElementById('login-error');
+  var btn   = document.querySelector('#login-screen .login-btn');
+
+  if (!user || !pass) { errEl.textContent = 'Preencha usuário e senha.'; return; }
+
+  errEl.textContent = '';
+  if (btn) { btn.textContent = '⏳ Carregando...'; btn.disabled = true; }
+
+  /* Carrega dados do GitHub (ou localStorage) para ter usuários atualizados */
+  try { await _loadAll(function(){}); } catch(e) {}
+
+  if (btn) { btn.textContent = '🔑 Entrar'; btn.disabled = false; }
+
+  var lista = _getUsuarios();
+  if (!lista.length) {
+    /* Usuário padrão inicial — altere após primeiro acesso */
+    lista.push({ id: 'admin', nome: 'admin', senhaHash: _hashSenha('1234'), permissoes: null });
+    dbSet('usuarios', lista);
+  }
+
+  var encontrado = null;
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].nome.toLowerCase() === user.toLowerCase() && lista[i].senhaHash === _hashSenha(pass)) {
+      encontrado = lista[i]; break;
+    }
+  }
+
+  if (!encontrado) {
+    errEl.textContent = '❌ Usuário ou senha incorretos.';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+    return;
+  }
+
+  _logado = encontrado;
+  document.getElementById('login-screen').classList.remove('open');
+  document.getElementById('header-username').textContent = encontrado.nome;
+  document.getElementById('header-user-info').style.display = 'flex';
+  errEl.textContent = '';
+  aplicarPermissoesNav();
+  sincronizar();
+}
+
+function fazerLogout() {
+  if (!confirm('Deseja sair do sistema?')) return;
+  _logado = null;
+  document.getElementById('header-user-info').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+  document.querySelectorAll('#main-nav button').forEach(function(b){ b.style.display = ''; });
+  document.getElementById('login-screen').classList.add('open');
+  setTimeout(function(){ document.getElementById('login-user').focus(); }, 100);
+}
+
+function temPermissao(mod) {
+  if (!_logado) return false;
+  if (!_logado.permissoes) return true;
+  return !!_logado.permissoes[mod];
+}
+
+function aplicarPermissoesNav() {
+  document.querySelectorAll('#main-nav button').forEach(function(btn) {
+    var mod = btn.getAttribute('data-mod');
+    if (mod) btn.style.display = temPermissao(mod) ? '' : 'none';
+    else btn.style.display = '';
+  });
+}
+
+/* =========================================================
+   NAVEGAÇÃO
+   ========================================================= */
+function goPage(id) {
+  var modMap = { 'generico': 'generico', 'usuarios': 'usuarios' };
+  if (modMap[id] && !temPermissao(modMap[id])) {
+    toast('Sem permissão para este módulo.', '#c04a3a');
+    return;
+  }
+
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var el = document.getElementById('page-' + id);
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('#main-nav button').forEach(function(b){
+    var pg = b.getAttribute('data-page') || '';
+    b.classList.toggle('active', pg === id || (id === 'dashboard' && !pg));
+  });
+  if (id === 'dashboard') {
+    var dbBtn = document.querySelector('#main-nav button:first-child');
+    if (dbBtn) dbBtn.classList.add('active');
+  }
+
+  if (id === 'dashboard')  renderDashboard();
+  if (id === 'filtro-agua') renderFiltroAgua();
+  if (id === 'extintor')   renderExtintor();
+  if (id === 'coifa')      renderCoifa();
+  if (id === 'medidores')  { renderMedidores(); renderMedResumosCards(); }
+  if (id === 'oleo')       { renderOleo(); renderOleoResumo(); }
+  if (id === 'generico')   { renderGcTipos(); renderGcExec(); populateGcSelect(); }
+  if (id === 'usuarios')   renderUsuarios();
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+var _toastTimer = null;
+function toast(msg, color) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = color || '#3a7a4a';
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+}
+
+/* =========================================================
+   DEL GENÉRICO
+   ========================================================= */
+function delItem(col, id, cb) {
+  if (!confirm('Remover este registro?')) return;
+  dbDel(col, id);
+  if (typeof cb === 'function') cb();
+  else if (typeof cb === 'string') window[cb]();
+  toast('Registro removido.');
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function renderDashboard() {
+  var alertas = [], proximas = [];
+
+  dbGet('filtroAgua').forEach(function(r){
+    var d = diasAte(r.prox);
+    if (d <= 60) alertas.push({ tipo:'💧 Filtro de Água', equip: r.equip, prox: r.prox, d: d });
+    proximas.push({ tipo:'💧', nome: r.equip, prox: r.prox, d: d });
+  });
+
+  dbGet('extintor').forEach(function(r){
+    var d = diasAte(r.prox);
+    if (d <= 60) alertas.push({ tipo:'🧯 Extintor', equip: r.equip, prox: r.prox, d: d });
+    proximas.push({ tipo:'🧯', nome: r.equip, prox: r.prox, d: d });
+  });
+
+  dbGet('coifa').forEach(function(r){
+    var d = diasAte(r.prox);
+    if (d <= 30) alertas.push({ tipo:'🌬️ Coifa', equip: r.equip, prox: r.prox, d: d });
+    proximas.push({ tipo:'🌬️', nome: r.equip, prox: r.prox, d: d });
+  });
+
+  var gcTipos = dbGet('gcTipos');
+  var gcExec  = dbGet('gcExec');
+  gcTipos.forEach(function(t){
+    var execs = gcExec.filter(function(e){ return e.tipoId === t.id; })
+      .sort(function(a,b){ return b.data.localeCompare(a.data); });
+    if (!execs.length) return;
+    var prox = addDias(execs[0].data, t.periodo);
+    var d = diasAte(prox);
+    if (d <= 30) alertas.push({ tipo:'📋 '+t.nome, equip: t.equip, prox: prox, d: d });
+    proximas.push({ tipo:'📋', nome: t.nome+' ('+t.equip+')', prox: prox, d: d });
+  });
+
+  proximas.sort(function(a,b){ return a.d - b.d; });
+  alertas.sort(function(a,b){ return a.d - b.d; });
+
+  var totalReg  = dbGet('filtroAgua').length + dbGet('extintor').length + dbGet('coifa').length + dbGet('medidores').length + dbGet('oleo').length;
+  var vencidos  = alertas.filter(function(a){ return a.d < 0; }).length;
+  var leituras  = dbGet('medidores').filter(function(r){ return r.data === hoje(); }).length;
+  var colOleo   = dbGet('oleo').length;
+
+  document.getElementById('dash-stats').innerHTML =
+    '<div class="stat-box"><div class="val">'+totalReg+'</div><div class="lbl">Total de registros</div></div>'
+    +'<div class="stat-box '+(vencidos ? 'red' : 'green')+'"><div class="val">'+vencidos+'</div><div class="lbl">'+(vencidos ? 'Itens vencidos' : 'Tudo em dia')+'</div></div>'
+    +'<div class="stat-box blue"><div class="val">'+leituras+'</div><div class="lbl">Leituras hoje</div></div>'
+    +'<div class="stat-box"><div class="val">'+colOleo+'</div><div class="lbl">Coletas de óleo</div></div>';
+
+  var alertHtml = '';
+  if (!alertas.length) {
+    alertHtml = '<div class="alert-box green"><span class="ico">✅</span><div class="txt"><strong>Tudo em dia!</strong>Nenhum item vencido ou próximo do vencimento.</div></div>';
+  } else {
+    alertas.slice(0, 5).forEach(function(a){
+      var cls = a.d < 0 ? 'red' : 'gold';
+      var msg = a.d < 0 ? 'Vencido há '+Math.abs(a.d)+' dias' : 'Vence em '+a.d+' dias ('+fmtData(a.prox)+')';
+      alertHtml += '<div class="alert-box '+cls+'"><span class="ico">'+(a.d < 0 ? '🚨' : '⚠️')+'</span>'
+        +'<div class="txt"><strong>'+a.tipo+' — '+a.equip+'</strong>'+msg+'</div></div>';
+    });
+  }
+  document.getElementById('dash-alertas').innerHTML = alertHtml;
+
+  var filtradas = proximas.filter(function(x){ return x.d >= 0; }).slice(0, 6);
+  var proxHtml = '';
+  if (!filtradas.length) {
+    proxHtml = '<div class="empty"><span class="ico">📅</span>Nenhuma manutenção registrada</div>';
+  } else {
+    proxHtml = '<table><thead><tr><th>Tipo</th><th>Item</th><th>Próxima</th></tr></thead><tbody>';
+    filtradas.forEach(function(p){
+      proxHtml += '<tr><td>'+p.tipo+'</td><td>'+p.nome+'</td><td>'+vencBadge(p.prox)+'</td></tr>';
+    });
+    proxHtml += '</tbody></table>';
+  }
+  document.getElementById('dash-proximas').innerHTML = proxHtml;
+
+  var ativs = [];
+  function addAtiv(col, label) {
+    dbGet(col).forEach(function(r){
+      ativs.push({ data: r.criadoEm || r.data || '', label: label, nome: r.equip || r.empresa || r.tipoNome || '' });
+    });
+  }
+  addAtiv('filtroAgua','💧 Filtro trocado');
+  addAtiv('extintor','🧯 Extintor');
+  addAtiv('coifa','🌬️ Coifa limpa');
+  addAtiv('medidores','📟 Leitura');
+  addAtiv('oleo','🛢️ Óleo coletado');
+  ativs.sort(function(a,b){ return b.data.localeCompare(a.data); });
+
+  var atHtml = '';
+  if (!ativs.length) {
+    atHtml = '<div class="empty"><span class="ico">🕒</span>Nenhuma atividade</div>';
+  } else {
+    atHtml = '<table><thead><tr><th>Data</th><th>Atividade</th><th>Item</th></tr></thead><tbody>';
+    ativs.slice(0, 8).forEach(function(a){
+      atHtml += '<tr><td>'+fmtData(a.data)+'</td><td>'+a.label+'</td><td>'+a.nome+'</td></tr>';
+    });
+    atHtml += '</tbody></table>';
+  }
+  document.getElementById('dash-atividades').innerHTML = atHtml;
+}
+
+/* =========================================================
+   FILTRO DE ÁGUA
+   ========================================================= */
+function addFiltroAgua() {
+  var equip = document.getElementById('fa-equip').value.trim();
+  var data  = document.getElementById('fa-data').value;
+  var tipo  = document.getElementById('fa-tipo').value;
+  var emp   = document.getElementById('fa-empresa').value.trim();
+  var valor = parseFloat(document.getElementById('fa-valor').value) || 0;
+  var obs   = document.getElementById('fa-obs').value.trim();
+
+  if (!equip) { toast('Informe o equipamento/local.', '#c04a3a'); return; }
+  if (!data)  { toast('Informe a data da troca.', '#c04a3a'); return; }
+  if (!tipo)  { toast('Selecione o tipo do filtro.', '#c04a3a'); return; }
+
+  dbAdd('filtroAgua', { id: uid(), equip: equip, data: data, tipo: tipo, empresa: emp, valor: valor, obs: obs, prox: addDias(data, 180), criadoEm: hoje() });
+  toast('✓ Troca de filtro registrada!');
+  ['fa-equip','fa-empresa','fa-obs'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('fa-data').value = '';
+  document.getElementById('fa-tipo').value = '';
+  document.getElementById('fa-valor').value = '0';
+  renderFiltroAgua();
+}
+
+function renderFiltroAgua() {
+  var lista = dbGet('filtroAgua').sort(function(a,b){ return b.data.localeCompare(a.data); });
+  var el = document.getElementById('lista-filtro-agua');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">💧</span>Nenhuma troca registrada</div>'; return; }
+  var h = '<table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Troca</th><th>Próxima</th><th>Empresa</th><th>Valor</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    h += '<tr><td><strong>'+r.equip+'</strong></td><td>'+r.tipo+'</td><td>'+fmtData(r.data)+'</td>'
+      +'<td>'+vencBadge(r.prox)+'</td><td>'+(r.empresa||'—')+'</td><td>'+moeda(r.valor)+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'filtroAgua\',\''+r.id+'\',renderFiltroAgua)">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+/* =========================================================
+   EXTINTORES
+   ========================================================= */
+function addExtintor() {
+  var equip = document.getElementById('ext-equip').value.trim();
+  var tipo  = document.getElementById('ext-tipo').value;
+  var data  = document.getElementById('ext-data').value;
+  var prox  = document.getElementById('ext-prox').value || addDias(data || hoje(), 365);
+  var emp   = document.getElementById('ext-empresa').value.trim();
+  var lacre = document.getElementById('ext-lacre').value.trim();
+  var valor = parseFloat(document.getElementById('ext-valor').value) || 0;
+  var obs   = document.getElementById('ext-obs').value.trim();
+
+  if (!equip) { toast('Informe a identificação do extintor.', '#c04a3a'); return; }
+  if (!tipo)  { toast('Selecione o tipo do extintor.', '#c04a3a'); return; }
+  if (!data)  { toast('Informe a data da recarga.', '#c04a3a'); return; }
+
+  dbAdd('extintor', { id: uid(), equip: equip, tipo: tipo, data: data, prox: prox, empresa: emp, lacre: lacre, valor: valor, obs: obs, criadoEm: hoje() });
+  toast('✓ Extintor registrado!');
+  ['ext-equip','ext-data','ext-prox','ext-empresa','ext-lacre','ext-obs'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('ext-tipo').value = '';
+  document.getElementById('ext-valor').value = '0';
+  renderExtintor();
+}
+
+function renderExtintor() {
+  var lista = dbGet('extintor').sort(function(a,b){ return b.data.localeCompare(a.data); });
+  var el = document.getElementById('lista-extintor');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">🧯</span>Nenhum registro</div>'; return; }
+  var h = '<table><thead><tr><th>Identificação</th><th>Tipo</th><th>Recarga</th><th>Próxima</th><th>Empresa</th><th>Valor</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    h += '<tr><td><strong>'+r.equip+'</strong>'+(r.lacre ? '<br><small style="color:var(--text-dim)">Lacre: '+r.lacre+'</small>' : '')+'</td>'
+      +'<td>'+r.tipo+'</td><td>'+fmtData(r.data)+'</td><td>'+vencBadge(r.prox)+'</td>'
+      +'<td>'+(r.empresa||'—')+'</td><td>'+moeda(r.valor)+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'extintor\',\''+r.id+'\',renderExtintor)">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+/* =========================================================
+   COIFA
+   ========================================================= */
+function addCoifa() {
+  var equip   = document.getElementById('cf-equip').value.trim();
+  var tipo    = document.getElementById('cf-tipo').value;
+  var periodo = parseInt(document.getElementById('cf-periodo').value);
+  var data    = document.getElementById('cf-data').value;
+  var emp     = document.getElementById('cf-empresa').value.trim();
+  var valor   = parseFloat(document.getElementById('cf-valor').value) || 0;
+  var obs     = document.getElementById('cf-obs').value.trim();
+
+  if (!equip) { toast('Informe o equipamento/local.', '#c04a3a'); return; }
+  if (!data)  { toast('Informe a data da limpeza.', '#c04a3a'); return; }
+
+  dbAdd('coifa', { id: uid(), equip: equip, tipo: tipo, periodo: periodo, data: data, prox: addDias(data, periodo), empresa: emp, valor: valor, obs: obs, criadoEm: hoje() });
+  toast('✓ Limpeza registrada!');
+  ['cf-equip','cf-data','cf-empresa','cf-obs'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('cf-valor').value = '0';
+  renderCoifa();
+}
+
+function renderCoifa() {
+  var lista = dbGet('coifa').sort(function(a,b){ return b.data.localeCompare(a.data); });
+  var el = document.getElementById('lista-coifa');
+  var tipoLabel = { coifa: 'Coifa', filtro: 'Filtro', duto: 'Duto' };
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">🌬️</span>Nenhum registro</div>'; return; }
+  var h = '<table><thead><tr><th>Equipamento</th><th>Tipo</th><th>Período</th><th>Limpeza</th><th>Próxima</th><th>Empresa</th><th>Valor</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    h += '<tr><td><strong>'+r.equip+'</strong></td><td>'+(tipoLabel[r.tipo]||r.tipo)+'</td>'
+      +'<td>'+r.periodo+'d</td><td>'+fmtData(r.data)+'</td><td>'+vencBadge(r.prox)+'</td>'
+      +'<td>'+(r.empresa||'—')+'</td><td>'+moeda(r.valor)+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'coifa\',\''+r.id+'\',renderCoifa)">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+/* =========================================================
+   MEDIDORES
+   ========================================================= */
+function addMedidor() {
+  var tipo    = document.getElementById('med-tipo').value;
+  var equip   = document.getElementById('med-equip').value.trim();
+  var data    = document.getElementById('med-data').value;
+  var leitura = parseFloat(document.getElementById('med-leitura').value);
+  var unidade = document.getElementById('med-unidade').value;
+  var obs     = document.getElementById('med-obs').value.trim();
+
+  if (!tipo)          { toast('Selecione o tipo de medidor.', '#c04a3a'); return; }
+  if (!equip)         { toast('Informe a identificação do medidor.', '#c04a3a'); return; }
+  if (!data)          { toast('Informe a data da leitura.', '#c04a3a'); return; }
+  if (isNaN(leitura)) { toast('Informe a leitura atual.', '#c04a3a'); return; }
+
+  dbAdd('medidores', { id: uid(), tipo: tipo, equip: equip, data: data, leitura: leitura, unidade: unidade, obs: obs, criadoEm: hoje() });
+  toast('✓ Leitura registrada!');
+  document.getElementById('med-tipo').value = '';
+  document.getElementById('med-equip').value = '';
+  document.getElementById('med-data').value = '';
+  document.getElementById('med-leitura').value = '';
+  document.getElementById('med-obs').value = '';
+  renderMedidores();
+  renderMedResumosCards();
+}
+
+function renderMedidores() {
+  var filtroTipo = document.getElementById('med-filtro-tipo').value;
+  var filtroMes  = document.getElementById('med-filtro-mes').value;
+  var lista = dbGet('medidores')
+    .filter(function(r){ return !filtroTipo || r.tipo === filtroTipo; })
+    .filter(function(r){ return !filtroMes || r.data.startsWith(filtroMes); })
+    .sort(function(a,b){ return b.data.localeCompare(a.data) || (b.criadoEm||'').localeCompare(a.criadoEm||''); });
+
+  var el = document.getElementById('lista-medidores');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">📟</span>Nenhuma leitura registrada</div>'; return; }
+
+  var equipMap = {};
+  dbGet('medidores').forEach(function(r){
+    if (!equipMap[r.equip]) equipMap[r.equip] = [];
+    equipMap[r.equip].push(r);
+  });
+  Object.keys(equipMap).forEach(function(k){
+    equipMap[k].sort(function(a,b){ return a.data.localeCompare(b.data); });
+  });
+
+  var h = '<table><thead><tr><th>Tipo</th><th>Medidor</th><th>Data</th><th>Leitura</th><th>Consumo</th><th>Obs.</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    var consumo = '—';
+    var eq = equipMap[r.equip];
+    if (eq) {
+      var idx = -1;
+      for (var i = 0; i < eq.length; i++) { if (eq[i].id === r.id) { idx = i; break; } }
+      if (idx > 0) consumo = (r.leitura - eq[idx-1].leitura).toFixed(2)+' '+r.unidade;
+    }
+    h += '<tr><td>'+ticoIco(r.tipo)+'</td><td><strong>'+r.equip+'</strong></td><td>'+fmtData(r.data)+'</td>'
+      +'<td><strong>'+r.leitura+'</strong> <small>'+r.unidade+'</small></td>'
+      +'<td>'+consumo+'</td><td>'+(r.obs||'—')+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'medidores\',\''+r.id+'\',function(){renderMedidores();renderMedResumosCards();})">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+function renderMedResumosCards() {
+  var todos  = dbGet('medidores');
+  var tipos  = ['agua','gas','eletricidade'];
+  var labels = { agua:'💧 Água', gas:'🔥 Gás', eletricidade:'⚡ Eletricidade' };
+  var el = document.getElementById('med-resumos');
+  var h = '';
+  tipos.forEach(function(tipo){
+    var equipsTipo = {};
+    todos.filter(function(r){ return r.tipo === tipo; }).forEach(function(r){
+      if (!equipsTipo[r.equip]) equipsTipo[r.equip] = [];
+      equipsTipo[r.equip].push(r);
+    });
+    Object.keys(equipsTipo).forEach(function(equip){
+      var arr = equipsTipo[equip].sort(function(a,b){ return a.data.localeCompare(b.data); });
+      var ultima = arr[arr.length-1];
+      var consumo = arr.length > 1 ? (arr[arr.length-1].leitura - arr[arr.length-2].leitura).toFixed(2) : '—';
+      h += '<div class="card"><div class="card-title">'+labels[tipo]+'</div>'
+        +'<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">'+equip+'</div>'
+        +'<div class="consumo-val">'+ultima.leitura+' <small style="font-size:14px;">'+ultima.unidade+'</small></div>'
+        +'<div class="consumo-lbl">Última leitura em '+fmtData(ultima.data)+'</div>'
+        +(consumo!=='—' ? '<div style="margin-top:8px;font-size:13px;color:var(--text-dim);">Consumo: <strong>'+consumo+' '+ultima.unidade+'</strong></div>' : '')
+        +'</div>';
+    });
+  });
+  el.innerHTML = h || '<div class="empty"><span class="ico">📟</span>Nenhum medidor registrado ainda</div>';
+}
+
+/* =========================================================
+   ÓLEO
+   ========================================================= */
+function onGalaoChange() {
+  var v = document.getElementById('ol-galao').value;
+  document.getElementById('ol-galao-custom-field').style.display = (v === 'outro') ? 'block' : 'none';
+}
+
+function onOlModalChange() {
+  var mod = document.getElementById('ol-modalidade').value;
+  document.getElementById('ol-pagamento-fields').style.display = (mod === 'pagamento') ? 'block' : 'none';
+  document.getElementById('ol-produto-fields').style.display   = (mod === 'produto')   ? 'block' : 'none';
+}
+
+function addOleo() {
+  var data       = document.getElementById('ol-data').value;
+  var empresa    = document.getElementById('ol-empresa').value.trim();
+  var galaoSel   = document.getElementById('ol-galao').value;
+  var galaoVol   = galaoSel === 'outro' ? (parseFloat(document.getElementById('ol-galao-custom').value)||0) : parseInt(galaoSel);
+  var qtd        = parseInt(document.getElementById('ol-qtd').value) || 1;
+  var modalidade = document.getElementById('ol-modalidade').value;
+  var vlitro     = parseFloat(document.getElementById('ol-vlitro').value) || 0;
+  var produto    = document.getElementById('ol-produto').value.trim();
+  var vproduto   = parseFloat(document.getElementById('ol-vproduto').value) || 0;
+  var obs        = document.getElementById('ol-obs').value.trim();
+
+  if (!data)     { toast('Informe a data da coleta.', '#c04a3a'); return; }
+  if (!empresa)  { toast('Informe a empresa coletora.', '#c04a3a'); return; }
+  if (!galaoVol) { toast('Informe o volume do galão.', '#c04a3a'); return; }
+
+  var totalLitros = galaoVol * qtd;
+  var valorTotal  = modalidade === 'pagamento' ? vlitro * totalLitros : (modalidade === 'produto' ? vproduto : 0);
+
+  dbAdd('oleo', { id: uid(), data: data, empresa: empresa, galaoVol: galaoVol, qtd: qtd, totalLitros: totalLitros, modalidade: modalidade, vlitro: vlitro, produto: produto, vproduto: vproduto, valorTotal: valorTotal, obs: obs, criadoEm: hoje() });
+  toast('✓ Coleta registrada!');
+  document.getElementById('ol-data').value = '';
+  document.getElementById('ol-empresa').value = '';
+  document.getElementById('ol-qtd').value = '1';
+  document.getElementById('ol-vlitro').value = '';
+  document.getElementById('ol-produto').value = '';
+  document.getElementById('ol-vproduto').value = '0';
+  document.getElementById('ol-obs').value = '';
+  renderOleo();
+  renderOleoResumo();
+}
+
+function renderOleo() {
+  var lista = dbGet('oleo').sort(function(a,b){ return b.data.localeCompare(a.data); });
+  var el = document.getElementById('lista-oleo');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">🛢️</span>Nenhuma coleta registrada</div>'; return; }
+  var modLabel = { pagamento:'💰 Pagamento', produto:'🧴 Produto', gratuito:'✅ Gratuito' };
+  var h = '<table><thead><tr><th>Data</th><th>Empresa</th><th>Volume</th><th>Modalidade</th><th>Valor Total</th><th>Obs.</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    var vlabel = '';
+    if (r.modalidade === 'pagamento') vlabel = moeda(r.valorTotal)+' ('+moeda(r.vlitro)+'/L)';
+    else if (r.modalidade === 'produto') vlabel = r.produto+(r.vproduto?' ~ '+moeda(r.vproduto):'');
+    else vlabel = '—';
+    h += '<tr><td>'+fmtData(r.data)+'</td><td><strong>'+r.empresa+'</strong></td>'
+      +'<td>'+r.totalLitros+'L ('+r.qtd+'x'+r.galaoVol+'L)</td>'
+      +'<td>'+(modLabel[r.modalidade]||r.modalidade)+'</td>'
+      +'<td>'+vlabel+'</td><td>'+(r.obs||'—')+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'oleo\',\''+r.id+'\',function(){renderOleo();renderOleoResumo();})">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+function renderOleoResumo() {
+  var lista = dbGet('oleo');
+  var el = document.getElementById('oleo-resumo');
+  if (!lista.length) { el.innerHTML = '<div class="empty">Nenhuma coleta registrada.</div>'; return; }
+  var totalLitros = 0, totalValor = 0;
+  lista.forEach(function(r){ totalLitros += r.totalLitros; totalValor += r.valorTotal || 0; });
+  el.innerHTML = '<div class="stats-row">'
+    +'<div class="stat-box"><div class="val">'+lista.length+'</div><div class="lbl">Coletas realizadas</div></div>'
+    +'<div class="stat-box"><div class="val">'+totalLitros+'L</div><div class="lbl">Total de litros coletados</div></div>'
+    +'<div class="stat-box green"><div class="val">'+moeda(totalValor)+'</div><div class="lbl">Valor total recebido/produtos</div></div>'
+    +'</div>';
+}
+
+/* =========================================================
+   GENÉRICO (OUTROS CONTROLES)
+   ========================================================= */
+function addControleGenerico() {
+  var nome    = document.getElementById('gc-nome').value.trim();
+  var equip   = document.getElementById('gc-equip').value.trim();
+  var medicao = document.getElementById('gc-medicao').value;
+  var periodo = parseInt(document.getElementById('gc-periodo').value);
+  var desc    = document.getElementById('gc-desc').value.trim();
+
+  if (!nome)    { toast('Informe o nome do controle.', '#c04a3a'); return; }
+  if (!equip)   { toast('Informe o equipamento/local.', '#c04a3a'); return; }
+  if (!medicao) { toast('Selecione o tipo de medição.', '#c04a3a'); return; }
+
+  dbAdd('gcTipos', { id: uid(), nome: nome, equip: equip, medicao: medicao, periodo: periodo, desc: desc, criadoEm: hoje() });
+  toast('✓ Controle cadastrado!');
+  ['gc-nome','gc-equip','gc-desc'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('gc-medicao').value = '';
+  renderGcTipos();
+  populateGcSelect();
+}
+
+function renderGcTipos() {
+  var lista = dbGet('gcTipos');
+  var el = document.getElementById('lista-gc-tipos');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">📋</span>Nenhum controle cadastrado</div>'; return; }
+  var periodoLabel = { 1:'Diária',7:'Semanal',15:'Quinzenal',30:'Mensal',60:'Bimestral',90:'Trimestral',180:'Semestral',365:'Anual' };
+  var h = '';
+  lista.forEach(function(r){
+    var execs = dbGet('gcExec').filter(function(e){ return e.tipoId === r.id; })
+      .sort(function(a,b){ return b.data.localeCompare(a.data); });
+    var ultima = execs.length ? execs[0] : null;
+    var prox   = ultima ? addDias(ultima.data, r.periodo) : null;
+    h += '<div style="border:1px solid var(--border);border-radius:8px;padding:13px;margin-bottom:9px;background:var(--surface2);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+      +'<div><strong style="color:var(--cream);">'+r.nome+'</strong> <span class="badge badge-gold">'+r.medicao+'</span>'
+      +'<div style="font-size:12px;color:var(--text-dim);margin-top:3px;">📍 '+r.equip+' · ⏱ '+(periodoLabel[r.periodo]||r.periodo+'d')+'</div>'
+      +(r.desc ? '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">'+r.desc+'</div>' : '')
+      +'<div style="margin-top:6px;font-size:12px;">'+(ultima ? 'Última: '+fmtData(ultima.data)+' — '+(prox ? vencBadge(prox) : '') : '<span style="color:var(--text-dim);">Nenhuma execução</span>')+'</div>'
+      +'</div>'
+      +'<button class="btn btn-danger" onclick="delItem(\'gcTipos\',\''+r.id+'\',function(){renderGcTipos();populateGcSelect();})">✕</button>'
+      +'</div></div>';
+  });
+  el.innerHTML = h;
+}
+
+function populateGcSelect() {
+  var lista = dbGet('gcTipos');
+  var sel = document.getElementById('gc-exec-tipo');
+  sel.innerHTML = '<option value="">— Selecione o controle —</option>';
+  lista.forEach(function(r){ sel.innerHTML += '<option value="'+r.id+'">'+r.nome+' ('+r.equip+')</option>'; });
+}
+
+function addExecucao() {
+  var tipoId = document.getElementById('gc-exec-tipo').value;
+  var data   = document.getElementById('gc-exec-data').value;
+  var resp   = document.getElementById('gc-exec-resp').value.trim();
+  var obs    = document.getElementById('gc-exec-obs').value.trim();
+
+  if (!tipoId) { toast('Selecione o controle.', '#c04a3a'); return; }
+  if (!data)   { toast('Informe a data de execução.', '#c04a3a'); return; }
+
+  var tipos = dbGet('gcTipos');
+  var tipo = null;
+  for (var i = 0; i < tipos.length; i++) { if (tipos[i].id === tipoId) { tipo = tipos[i]; break; } }
+
+  dbAdd('gcExec', { id: uid(), tipoId: tipoId, tipoNome: tipo ? tipo.nome : '', equip: tipo ? tipo.equip : '', data: data, resp: resp, obs: obs, criadoEm: hoje() });
+  toast('✓ Execução registrada!');
+  ['gc-exec-data','gc-exec-resp','gc-exec-obs'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('gc-exec-tipo').value = '';
+  renderGcExec();
+  renderGcTipos();
+}
+
+function renderGcExec() {
+  var lista = dbGet('gcExec').sort(function(a,b){ return b.data.localeCompare(a.data); });
+  var el = document.getElementById('lista-gc-exec');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">📝</span>Nenhuma execução registrada</div>'; return; }
+  var h = '<table><thead><tr><th>Controle</th><th>Equipamento</th><th>Data</th><th>Responsável</th><th>Resultado</th><th></th></tr></thead><tbody>';
+  lista.forEach(function(r){
+    h += '<tr><td><strong>'+r.tipoNome+'</strong></td><td>'+r.equip+'</td><td>'+fmtData(r.data)+'</td>'
+      +'<td>'+(r.resp||'—')+'</td><td>'+(r.obs||'—')+'</td>'
+      +'<td><button class="btn btn-danger" onclick="delItem(\'gcExec\',\''+r.id+'\',function(){renderGcExec();renderGcTipos();})">✕</button></td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table>';
+}
+
+/* =========================================================
+   USUÁRIOS
+   ========================================================= */
+function addUsuario() {
+  var nome   = document.getElementById('usr-nome').value.trim();
+  var senha  = document.getElementById('usr-senha').value;
+  var senha2 = document.getElementById('usr-senha2').value;
+
+  if (!nome)            { toast('Informe o nome de usuário.', '#c04a3a'); return; }
+  if (senha.length < 4) { toast('Senha deve ter ao menos 4 caracteres.', '#c04a3a'); return; }
+  if (senha !== senha2) { toast('As senhas não coincidem.', '#c04a3a'); return; }
+
+  var lista = _getUsuarios();
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].nome.toLowerCase() === nome.toLowerCase()) { toast('Usuário já existe.', '#c04a3a'); return; }
+  }
+
+  var permChecks = document.querySelectorAll('#perm-novo-grid input[type=checkbox]');
+  var permissoes = {};
+  permChecks.forEach(function(c){ permissoes[c.value] = c.checked; });
+
+  lista.push({ id: uid(), nome: nome, senhaHash: _hashSenha(senha), permissoes: permissoes });
+  dbSet('usuarios', lista);
+  document.getElementById('usr-nome').value = '';
+  document.getElementById('usr-senha').value = '';
+  document.getElementById('usr-senha2').value = '';
+  toast('✓ Usuário cadastrado!');
+  renderUsuarios();
+}
+
+function delUsuario(id) {
+  var lista = _getUsuarios();
+  if (lista.length <= 1) { toast('Deve haver ao menos um usuário.', '#c04a3a'); return; }
+  var alvo = null;
+  for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { alvo = lista[i]; break; } }
+  if (_logado && alvo && alvo.nome === _logado.nome) { toast('Não é possível remover o usuário logado.', '#c04a3a'); return; }
+  if (!confirm('Remover usuário "' + (alvo ? alvo.nome : '') + '"?')) return;
+  dbSet('usuarios', lista.filter(function(u){ return u.id !== id; }));
+  toast('Usuário removido.');
+  renderUsuarios();
+}
+
+function editarPermissoes(id) {
+  var lista = _getUsuarios();
+  var u = null;
+  for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { u = lista[i]; break; } }
+  if (!u) return;
+
+  var modulos = [
+    {k:'filtro-agua',l:'💧 Filtro de Água'},{k:'extintor',l:'🧯 Extintores'},
+    {k:'coifa',l:'🌬️ Coifa'},{k:'medidores',l:'📟 Medidores'},
+    {k:'oleo',l:'🛢️ Óleo'},{k:'generico',l:'📋 Outros Controles'},{k:'usuarios',l:'🔐 Usuários'}
+  ];
+  var perms = u.permissoes || {};
+  var checksHtml = modulos.map(function(m){
+    return '<label class="perm-item"><input type="checkbox" class="ep-check" data-mod="'+m.k+'"'+(perms[m.k] ? ' checked' : '')+'> '+m.l+'</label>';
+  }).join('');
+
+  var overlay = document.getElementById('modal-edit-perm');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'modal-edit-perm';
+    overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '<div class="modal-box">'
+    +'<h3>✏️ Permissões de Acesso</h3>'
+    +'<p>Usuário: <strong style="color:var(--cream);">'+u.nome+'</strong></p>'
+    +'<div class="perm-grid">'+checksHtml+'</div>'
+    +'<div class="modal-foot">'
+    +'<button class="btn btn-ghost" onclick="document.getElementById(\'modal-edit-perm\').classList.remove(\'open\')">Cancelar</button>'
+    +'<button class="btn btn-gold" onclick="salvarPermissoes(\''+id+'\')">✓ Salvar</button>'
+    +'</div></div>';
+  overlay.classList.add('open');
+}
+
+function salvarPermissoes(id) {
+  var lista = _getUsuarios();
+  var u = null;
+  for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { u = lista[i]; break; } }
+  if (!u) return;
+  var checks = document.querySelectorAll('#modal-edit-perm .ep-check');
+  var permissoes = {};
+  checks.forEach(function(c){ permissoes[c.getAttribute('data-mod')] = c.checked; });
+  u.permissoes = permissoes;
+  dbSet('usuarios', lista);
+  document.getElementById('modal-edit-perm').classList.remove('open');
+  toast('✓ Permissões atualizadas!');
+  renderUsuarios();
+}
+
+function renderUsuarios() {
+  var lista = _getUsuarios();
+  var el = document.getElementById('lista-usuarios');
+  if (!lista.length) { el.innerHTML = '<div class="empty"><span class="ico">🔐</span>Nenhum usuário</div>'; return; }
+  var modulos = [
+    {k:'filtro-agua',l:'💧 Filtro'},{k:'extintor',l:'🧯 Extintores'},
+    {k:'coifa',l:'🌬️ Coifa'},{k:'medidores',l:'📟 Medidores'},
+    {k:'oleo',l:'🛢️ Óleo'},{k:'generico',l:'📋 Outros'},{k:'usuarios',l:'🔐 Usuários'}
+  ];
+  var h = '';
+  lista.forEach(function(u){
+    var isMe = _logado && u.nome === _logado.nome;
+    var perms = u.permissoes;
+    var permHtml = perms
+      ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px;">'
+        + modulos.filter(function(m){ return perms[m.k]; }).map(function(m){ return '<span class="perm-badge">'+m.l+'</span>'; }).join('')
+        + '</div>'
+      : '<div style="margin-top:4px;"><span class="perm-badge">Acesso total</span></div>';
+    h += '<div class="user-item" style="flex-direction:column;align-items:flex-start;gap:5px;">'
+      +'<div style="display:flex;justify-content:space-between;width:100%;align-items:center;">'
+      +'<div><div class="uname">'+u.nome+(isMe ? ' <span style="font-size:10px;color:var(--gold);">(você)</span>' : '')+'</div>'
+      +'<div class="urole">Usuário do sistema</div></div>'
+      +(isMe ? '' : '<div style="display:flex;gap:6px;">'
+        +'<button class="btn btn-ghost btn-sm" onclick="editarPermissoes(\''+u.id+'\')">✏️ Permissões</button>'
+        +'<button class="btn btn-danger" onclick="delUsuario(\''+u.id+'\')">✕</button>'
+        +'</div>')
+      +'</div>'+permHtml+'</div>';
+  });
+  el.innerHTML = h;
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', function() {
+  /* Datas padrão */
+  ['fa-data','ext-data','cf-data','med-data','ol-data','gc-exec-data'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = hoje();
+  });
+  var mesEl = document.getElementById('med-filtro-mes');
+  if (mesEl) mesEl.value = new Date().toISOString().slice(0, 7);
+
+  /* Aviso se localStorage indisponível */
+  if (!_storageAvail) {
+    var warn = document.createElement('div');
+    warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c04a3a;color:#fff;text-align:center;padding:10px;font-size:13px;z-index:99999;';
+    warn.textContent = '⚠️ Armazenamento local indisponível — os dados não serão salvos entre sessões. Verifique as configurações do navegador.';
+    document.body.appendChild(warn);
+  }
+
+  /* Status inicial */
+  if (!GH.isConfigured()) {
+    setStatus('⚠️ Configure o GitHub →', '#c04a3a');
+  }
+
+  /* Carrega dados (GitHub ou localStorage) antes de mostrar o login */
+  dbLoad(); /* carga rápida local para ter usuários imediatamente */
+
+  setTimeout(function(){ document.getElementById('login-user').focus(); }, 100);
+});
+</script>
+</body>
+</html>
