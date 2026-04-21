@@ -1,0 +1,17 @@
+{
+  "usuarios": [
+    {
+      "id": "admin",
+      "nome": "admin",
+      "senhaHash": "170842",
+      "permissoes": null
+    }
+  ],
+  "filtroAgua": [],
+  "extintor": [],
+  "coifa": [],
+  "medidores": [],
+  "oleo": [],
+  "gcTipos": [],
+  "gcExec": []
+}
